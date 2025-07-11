@@ -6,8 +6,6 @@ const { UserModel, PasswordsModel } = require('../models/db');
 const userAuth = require('../middleware/userAuth');
 const JWT_SECRET = 'thisismyproject';
 
-
-
 //to add password
 router.post('/add', userAuth, async (req,res) => {
     const email = req.email;
@@ -31,5 +29,57 @@ router.post('/add', userAuth, async (req,res) => {
     }
 });
 
+//to delete password
+router.delete('/delete', userAuth, async (req, res) => {
+    const email = req.email;
+    const { title, username } = req.body;
+    
+    try {
+        const user = await PasswordsModel.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        
+        const initialLength = user.password.length;
+        user.password = user.password.filter(pwd => 
+            !(pwd.title === title && pwd.username === username)
+        );
+        
+        if (user.password.length === initialLength) {
+            return res.status(404).json({ message: "Password entry not found" });
+        }
+        
+        await user.save();
+        res.json({ message: "Password deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Something went wrong in the delete endpoint" });
+    }
+});
+
+//to update password
+router.put('/update', userAuth, async (req, res) => {
+    const email = req.email;
+    const { title, username, newValue } = req.body;
+    
+    try {
+        const user = await PasswordsModel.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        const passwordEntry = user.password.find(pwd => 
+            pwd.title === title && pwd.username === username
+        );
+        
+        if (!passwordEntry) {
+            return res.status(404).json({ message: "Password entry not found" });
+        }
+        passwordEntry.value = newValue;
+        await user.save();
+        
+        res.json({ message: "Password updated successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Something went wrong in the update endpoint" });
+    }
+});
 
 module.exports = router;
