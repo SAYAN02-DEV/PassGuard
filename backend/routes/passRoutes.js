@@ -82,4 +82,20 @@ router.put('/update', userAuth, async (req, res) => {
     }
 });
 
+//to get all passwords for a user
+router.get('/mypasswords', userAuth, async (req, res) => {
+    const email = req.email;
+    
+    try {
+        const user = await PasswordsModel.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        
+        res.json({ passwords: user.password });
+    } catch (err) {
+        res.status(500).json({ message: "Something went wrong in the mypasswords endpoint" });
+    }
+});
+
 module.exports = router;
